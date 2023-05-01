@@ -8,15 +8,13 @@ const data = {
 
 const getAllStates = async (req, res) => {
 
-    console.log("This is a get all statement");
+    
 
     //params only returns the "/?contig" part of the url, acting as if that whole thing is the param, which it isn't
     //I tried a number of things and eventually just settled on getting the value of that whole thing
-    const params = new URLSearchParams(req.url);
-    console.log(params);
-    console.log(params.get('/?contig'));
+    const value = req.query.contig;
     // const params = req.url;
-    const value = params.get('/?contig');
+    console.log(value);
 
 
     //if contig exists, check value
@@ -50,16 +48,29 @@ const getAllStates = async (req, res) => {
             res.status(200);
             let statesArr = [];
             //pull the two states individually as opposed to a for loop
-            const state = data.states.find(stt => stt.code === "HI");
-            const state2 = data.states.find(stt => stt.code === "AK");
+            const state = data.states.find(stt => stt.code === "AK");
+            const state2 = data.states.find(stt => stt.code === "HI");
+            
 
             //pull data from MongoDB for the individual states
-            const stateFact = await State.findOne({ stateCode: "HI" }).exec();
-            const state2Fact = await State.findOne({ stateCode: "AK" }).exec();
+            const stateFact = await State.findOne({ stateCode: "AK" }).exec();
+            const state2Fact = await State.findOne({ stateCode: "HI" }).exec();
+            
 
             //if those states exist in MongoDB and they have fun facts, put them in the JSON object
-            if(stateFact !== null && stateFact.funfacts !== null) state.funfacts = stateFact.funfacts;
-            if(state2Fact !== null && state2Fact.funfacts !== null) state2.funfacts = state2Fact.funfacts;
+            if(stateFact !== null) {
+                if(stateFact.funfacts !== null) {
+                    state.funfacts = stateFact.funfacts;
+                }
+            }
+
+            if(state2Fact !== null) {
+                if(state2Fact.funfacts !== null) {
+                    state2.funfacts = state2Fact.funfacts;
+                }
+            }
+
+            
 
             //push to the array we're using for the states data
             statesArr.push(state);
@@ -95,7 +106,7 @@ const getAllStates = async (req, res) => {
 
 const getOneState = async (req, res) => {
 
-    console.log("This is a get one state statement");
+   
     
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
@@ -112,7 +123,7 @@ const getOneState = async (req, res) => {
 
 const getStateCapital = async(req, res) => {
 
-    console.log("This is a get state capital statement");
+    
     
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
@@ -123,7 +134,7 @@ const getStateCapital = async(req, res) => {
 }
 
 const getStateNickname = async(req, res) => {
-    console.log("This is a get state capital statement");
+    
     
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
@@ -135,20 +146,20 @@ const getStateNickname = async(req, res) => {
 
 const getStatePopulation = async(req, res) => {
 
-    console.log("This is a get state population statement");
+    
     
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
         return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
 
-    res.json({'state': state.state, 'population': state.population});
+    res.json({'state': state.state, 'population': state.population.toLocaleString("en-US")});
 
 }
 
 const getStateAdmission = async(req, res) => {
 
-    console.log("This is a get state admission statement");
+    
     
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
@@ -163,8 +174,6 @@ const getStateAdmission = async(req, res) => {
 const addFunfact = async (req, res) => {
 
     let funfactsArr = [];
-    let funfactsMerge = [];
-    console.log("This is a add fun fact state statement");
     
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
@@ -259,15 +268,19 @@ const editFunfact = async (req, res) => {
     // check for duplicate states in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
 
-    if(!duplicate) return res.status(400).json({"message": `No fun fact data found for ${req.params.state}`});
+    
 
     //need to check for index and funfact
 
     if(!req.body.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
+    
     if(!Number.isInteger(parseInt(req.body.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
+    
     if(!req.body.funfact) return res.status(400).json({"message": "State fun fact value required"}); //and this
+    
     if(!duplicate) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`})
-    if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": `No Fun Facts found at that index for ${state.state}`});
+    
+    if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": `No Fun Fact found at that index for ${state.state}`});
 
     try {
 
@@ -287,20 +300,20 @@ const editFunfact = async (req, res) => {
 
 const deleteFunfact = async (req, res) => {
 
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
     // check for duplicate states in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
 
-    if(!duplicate) return res.status(400).json({"message": `No fun fact data found for ${req.params.state}`});
+    if(!req.body.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
+    if(!duplicate) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`});
 
     //need to check for index and funfact
 
-    if(!req.body.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
+    
     if(!Number.isInteger(parseInt(req.body.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
-    if(!duplicate) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`})
     if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": `No Fun Fact found at that index for ${state.state}`});
 
     //delete item at given element index - 1, which is the true index of the array (passing in 0 would be wrong because it would

@@ -5,7 +5,7 @@ const statesController = require('../controllers/statesController');
 const cors = require('cors');
 const corsOptions = require('../config/corsOptions');
 
-router.options('*', cors(corsOptions));
+router.options('*', cors());
 
 
 router.route('/')
