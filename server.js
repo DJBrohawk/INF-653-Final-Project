@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3500;
 
 connectDB();
 
-//app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 
 //built in middleware to handle urlencoded data
 // in other words, form data:
@@ -26,13 +26,27 @@ app.use(express.json());
 app.use('/states', require('./api/states'));
 
 
-app.use('/*', (req, res) => {
+// app.use('/*', (req, res) => {
 
+
+    
+
+//     res.status(404);
+//     return res.json({"message": "404 not found"});
+
+
+// });
+
+app.all('*', (req, res) => {
     res.status(404);
-    return res.json({"message": "404 not found"});
-
-
-})
+    if (req.accepts('html')) {
+        res.sendFile(path.join(__dirname, index.html));
+    } else if (req.accepts('json')) {
+        res.json({ "error": "404 Not Found" });
+    } else {
+        res.type('txt').send("404 Not Found");
+    }
+});
 
 //app.listen, checking connection
 mongoose.connection.once('open', () => {

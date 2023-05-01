@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const statesController = require('../controllers/statesController');
+const cors = require('cors');
+const corsOptions = require('../config/corsOptions');
 
+router.options('*', cors(corsOptions));
 
 
 router.route('/')
