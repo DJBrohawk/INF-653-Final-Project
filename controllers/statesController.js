@@ -97,7 +97,7 @@ const getOneState = async (req, res) => {
 
     console.log("This is a get one state statement");
     
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
         return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
@@ -114,9 +114,9 @@ const getStateCapital = async(req, res) => {
 
     console.log("This is a get state capital statement");
     
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
 
     res.json({'state': state.state, 'capital': state.capital_city});
@@ -125,9 +125,9 @@ const getStateCapital = async(req, res) => {
 const getStateNickname = async(req, res) => {
     console.log("This is a get state capital statement");
     
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
 
     res.json({'state': state.state, 'nickname': state.nickname});
@@ -137,9 +137,9 @@ const getStatePopulation = async(req, res) => {
 
     console.log("This is a get state population statement");
     
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
 
     res.json({'state': state.state, 'population': state.population});
@@ -150,9 +150,9 @@ const getStateAdmission = async(req, res) => {
 
     console.log("This is a get state admission statement");
     
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
 
     res.json({'state': state.state, 'admitted': state.admission_date});
@@ -166,9 +166,9 @@ const addFunfact = async (req, res) => {
     let funfactsMerge = [];
     console.log("This is a add fun fact state statement");
     
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
     // check for duplicate states in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
@@ -177,17 +177,17 @@ const addFunfact = async (req, res) => {
    
 
     if (!funfactsBody) {
-        return res.status(400).json({"message": `Fun fact data not found`}); //may need to change this
+        return res.status(400).json({"message": `State fun facts value required`}); //may need to change this
     }
 
     //if this is not null, the array 
     if(duplicate?.funfacts) funfactsArr = duplicate.funfacts;
 
-    //if the fun facts body is not an array, that means it's a singular string
-    //which means we push to the merge array
+    //if the fun facts body is not an array, the automated grading thing doesn't want that, so we
+    //reject it
     if(!Array.isArray(funfactsBody)){ 
         
-        funfactsArr.push(funfactsBody);
+        return res.status(400).json({"message": `State fun facts value must be an array`}); //may need to change this
 
         //else it must be an array, so we will concatenate the two arrays
     } else {
@@ -236,12 +236,14 @@ const addFunfact = async (req, res) => {
 
 const getFunfact = async (req, res) => {
 
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` });
     }
     // check for duplicate states in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
+
+    if(!duplicate || duplicate.funfacts === null) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`});
 
     res.json({"funfact": duplicate.funfacts[getRandomInt(duplicate.funfacts.length)]});
 
@@ -250,9 +252,9 @@ const getFunfact = async (req, res) => {
 
 const editFunfact = async (req, res) => {
 
-    const state = data.states.find(stt => stt.code === req.params.state);
+    const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
-        return res.status(400).json({ "message": `State ID ${req.params.state} not found` });
+        return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
     // check for duplicate states in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
@@ -261,10 +263,11 @@ const editFunfact = async (req, res) => {
 
     //need to check for index and funfact
 
-    if(!req.body?.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
-    if(!Number.isInteger(parseInt(req.body?.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
-    if(!req.body?.funfact) return res.status(400).json({"message": "No fun fact data found"}); //and this
-    if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": "Fun fact data not found"});
+    if(!req.body.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
+    if(!Number.isInteger(parseInt(req.body.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
+    if(!req.body.funfact) return res.status(400).json({"message": "State fun fact value required"}); //and this
+    if(!duplicate) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`})
+    if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": `No Fun Facts found at that index for ${state.state}`});
 
     try {
 
@@ -295,9 +298,10 @@ const deleteFunfact = async (req, res) => {
 
     //need to check for index and funfact
 
-    if(!req.body?.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
-    if(!Number.isInteger(parseInt(req.body?.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
-    if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": "Fun fact data not found"});
+    if(!req.body.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
+    if(!Number.isInteger(parseInt(req.body.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
+    if(!duplicate) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`})
+    if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": `No Fun Fact found at that index for ${state.state}`});
 
     //delete item at given element index - 1, which is the true index of the array (passing in 0 would be wrong because it would
     //falsely show a false value
