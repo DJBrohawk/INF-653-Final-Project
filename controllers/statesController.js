@@ -8,19 +8,16 @@ const data = {
 
 const getAllStates = async (req, res) => {
 
-    
-
-    //params only returns the "/?contig" part of the url, acting as if that whole thing is the param, which it isn't
-    //I tried a number of things and eventually just settled on getting the value of that whole thing
     const value = req.query.contig;
     // const params = req.url;
-    console.log(value);
+  
 
 
     //if contig exists, check value
-    if(value !== null){
+    if(value !== null && value !== undefined){
+      
         //if true, get the lower 48 plus their fun fact data
-        if(value == "true"){
+        if(value === "true"){
             res.status(200);
             //data.states is an array, loop through the array for AK and HI and remove them
             //using splice
@@ -42,44 +39,21 @@ const getAllStates = async (req, res) => {
             res.json(data.states);
             return;
            //if false, get Alaska and Hawaii + fun fact data
-        } else if (value == "false") {
+        } else if (value === "false") {
 
-
+            
             res.status(200);
             let statesArr = [];
             //pull the two states individually as opposed to a for loop
             const state = data.states.find(stt => stt.code === "AK");
             const state2 = data.states.find(stt => stt.code === "HI");
-            
-
-            //pull data from MongoDB for the individual states
-            const stateFact = await State.findOne({ stateCode: "AK" }).exec();
-            const state2Fact = await State.findOne({ stateCode: "HI" }).exec();
-            
-
-            //if those states exist in MongoDB and they have fun facts, put them in the JSON object
-            if(stateFact !== null) {
-                if(stateFact.funfacts !== null) {
-                    state.funfacts = stateFact.funfacts;
-                }
-            }
-
-            if(state2Fact !== null) {
-                if(state2Fact.funfacts !== null) {
-                    state2.funfacts = state2Fact.funfacts;
-                }
-            }
-
-            
 
             //push to the array we're using for the states data
             statesArr.push(state);
             statesArr.push(state2);
-
-            //set the state data to just the two states with their facts
-            data.setStates(statesArr);
+            
             //response is the above data
-            res.json(data.states);
+            res.json(statesArr);
             return;
         }
     }
@@ -201,10 +175,9 @@ const addFunfact = async (req, res) => {
         //else it must be an array, so we will concatenate the two arrays
     } else {
 
-        console.log("It's an array");
-        console.log(funfactsBody);
+
         funfactsArr = funfactsArr.concat(funfactsBody);
-        console.log(funfactsArr);
+       
 
     }
     
