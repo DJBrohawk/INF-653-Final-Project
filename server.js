@@ -25,6 +25,7 @@ app.use(express.json());
 //you can app.use('/*', require...) to override the below and have all directories
 
 app.use('/states', require('./api/states'));
+app.use('/ebay', require('./api/ebay'));
 
 
 // app.use('/*', (req, res) => {
