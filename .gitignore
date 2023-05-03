@@ -1,1 +1,4 @@
 .env
+api/ebay.js
+controllers/ebayController.js
+node_modules/
