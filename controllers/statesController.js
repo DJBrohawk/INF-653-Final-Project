@@ -8,6 +8,7 @@ const data = {
 
 const getAllStates = async (req, res) => {
 
+    //pull the valid of "contig" in the URL, whether it exists or not
     const value = req.query.contig;
     // const params = req.url;
   
@@ -78,6 +79,11 @@ const getAllStates = async (req, res) => {
 
 }
 
+
+
+//NOTE: all of the functions from getOneState to getStateAdmission all function the same way
+//there's a get request on the individual state passed in via JSON, and it returns the necessary data
+//via the response
 const getOneState = async (req, res) => {
 
    
@@ -149,21 +155,24 @@ const addFunfact = async (req, res) => {
 
     let funfactsArr = [];
     
+    //find the state in the request param
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
+
+    //if you can't find it, reject
     if (!state) {
         return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
     }
-    // check for duplicate states in the DB
+    // check for states info already present in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
     const funfactsBody = req.body.funfacts;
 
    
-
+    //if there's no fun fact in the body, reject
     if (!funfactsBody) {
         return res.status(400).json({"message": `State fun facts value required`}); //may need to change this
     }
 
-    //if this is not null, the array 
+    //if this is not null, check for fun facts in the found state, push it in to funfacts array
     if(duplicate?.funfacts) funfactsArr = duplicate.funfacts;
 
     //if the fun facts body is not an array, the automated grading thing doesn't want that, so we
@@ -172,7 +181,8 @@ const addFunfact = async (req, res) => {
         
         return res.status(400).json({"message": `State fun facts value must be an array`}); //may need to change this
 
-        //else it must be an array, so we will concatenate the two arrays
+        //else it must be an array, so we will concatenate the two arrays of the array that already
+        //existed and the new array from the request
     } else {
 
 
@@ -205,7 +215,7 @@ const addFunfact = async (req, res) => {
     }
 
     
-    //otherwise, the duplicate is a state that's in the DB?, so we just essentially overwrite the whole thing
+    //otherwise, the duplicate is a state that's in the DB, so we just essentially overwrite the whole thing
     //with the added information
     duplicate.overwrite({stateCode: duplicate.stateCode, funfacts: funfactsArr});
     duplicate.save();
@@ -225,8 +235,11 @@ const getFunfact = async (req, res) => {
     // check for duplicate states in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
 
+    //if there's no state found, or there's no facts found for that state
     if(!duplicate || duplicate.funfacts === null) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`});
 
+    //getting here means there is a state with fun facts, so we return a random fun fact from the list of facts
+    //getRandomInt returns the floor so no subtraction of 1 is needed here
     res.json({"funfact": duplicate.funfacts[getRandomInt(duplicate.funfacts.length)]});
 
 
@@ -234,6 +247,7 @@ const getFunfact = async (req, res) => {
 
 const editFunfact = async (req, res) => {
 
+    //same checking of a state as in the other functions
     const state = data.states.find(stt => stt.code === req.params.state.toUpperCase());
     if (!state) {
         return res.status(400).json({ "message": `Invalid state abbreviation parameter` }); //State ID ${req.params.state} not found
@@ -244,7 +258,7 @@ const editFunfact = async (req, res) => {
     
 
     //need to check for index and funfact
-
+    //this is a number of checks to make sure the data both exists and is valid
     if(!req.body.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
     
     if(!Number.isInteger(parseInt(req.body.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
@@ -255,8 +269,10 @@ const editFunfact = async (req, res) => {
     
     if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": `No Fun Fact found at that index for ${state.state}`});
 
+    //this was a try catch for any weird index out of bounds error that might make it this far
     try {
-
+        //due to the request needing to be non-zero based, we subtract one from the duplicate funfacts array to add
+        //the new value to it
     duplicate.funfacts[req.body.index-1] = req.body.funfact;
     duplicate.save();
     res.json(duplicate);
@@ -280,13 +296,13 @@ const deleteFunfact = async (req, res) => {
     // check for duplicate states in the DB
     const duplicate = await State.findOne({ stateCode: state.code }).exec();
 
+    //some checks to ensure data exists where necessary
     if(!req.body.index) return res.status(400).json({"message": "State fun fact index value required"}); //may have to change this
+   
     if(!duplicate) return res.status(400).json({"message": `No Fun Facts found for ${state.state}`});
-
-    //need to check for index and funfact
-
     
     if(!Number.isInteger(parseInt(req.body.index))) return res.status(400).json({"message": "Index must be a number entered without quotes"});
+  
     if(!duplicate.funfacts[req.body.index - 1]) return res.status(400).json({"message": `No Fun Fact found at that index for ${state.state}`});
 
     //delete item at given element index - 1, which is the true index of the array (passing in 0 would be wrong because it would

@@ -6,6 +6,7 @@ const cors = require('cors');
 const corsOptions = require('./config/corsOptions');
 const mongoose = require('mongoose');
 const connectDB = require('./config/dbConn');
+//NOTE: if the EADDRINUSE error occurs, just change this to either 3000 or 3500, whichever one it isn't. That'll fix it
 const PORT = process.env.PORT || 3500;
 
 //connect to MongoDB
